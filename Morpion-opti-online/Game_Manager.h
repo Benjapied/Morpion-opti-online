@@ -8,6 +8,8 @@ namespace sf {
 	class RenderWindow;
 };
 
+class Player;
+
 class Game_Manager
 {
 public:
@@ -22,7 +24,7 @@ public:
 
 	void print_grid(sf::RenderWindow* window);
 
-	void gameLoop(sf::RenderWindow* window);
+	void gameLoop(sf::RenderWindow* window, Player* oPlayer1, Player* oPlayer2);
 
 	bool placeSign(sf::Vector2i coo, char sign);
 

@@ -22,6 +22,10 @@ void Game_Manager::Init_grid() {
 		}
 	}
 
+	if (m_graphicGrid.size() != 0) {
+		return;
+	}
+
 	//Définition des traits constituants la grille de jeu
 	m_graphicGrid.push_back(new sf::RectangleShape(sf::Vector2f(5, 1080 * 3 / 5)));
 	m_graphicGrid[0]->setPosition(float(1920 * 4 / 9), float(1080 * 1 / 5));
@@ -42,10 +46,12 @@ void Game_Manager::Draw(sf::RenderWindow* window) {
 };
 
 void Game_Manager::print_grid(sf::RenderWindow* window) {
+	//Print la grid 
 	for (int i = 0; i < m_graphicGrid.size(); i++) {
 		window->draw(*m_graphicGrid[i]);
 	}
 
+	//Print les éléments de la grid
 	for (int i = 0; i < m_grid.size(); i++) {
 		for (int j = 0; j < m_grid.size(); j++) {
 			if (m_grid[i][j]->m_form != (nullptr)) {
@@ -55,20 +61,27 @@ void Game_Manager::print_grid(sf::RenderWindow* window) {
 	}
 }
 
-void Game_Manager::gameLoop(sf::RenderWindow* window) {
+void Game_Manager::gameLoop(sf::RenderWindow* window, Player* oPlayer1, Player* oPlayer2) {
+
+	std::cout << oPlayer1->m_name << " a " << oPlayer1->m_iPoints << " points" << std::endl;
+	std::cout << oPlayer2->m_name << " a " << oPlayer2->m_iPoints << " points" << std::endl;
+
+	this->Init_grid();
 
 	sf::Event event;
 	Event_Manager* oEvent_Manager = new Event_Manager();
+	//Va agir sur les clicks souris 
 
-	Player* oPlayer1 = new Player('c');
-	Player* oPlayer2 = new Player('r');
-
-	Player* current_player = oPlayer1;
+	std::string answer;
 
 	int round = 0;
 
+	Player* current_player = oPlayer1;
+	//Le current player change à chaque tour 
+
 	while (window->isOpen())
 	{
+		//Fermeture de la fenetre si croix cliquée
 		while (window->pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
@@ -77,24 +90,28 @@ void Game_Manager::gameLoop(sf::RenderWindow* window) {
 
 		//Placement de signe 
 		if (oEvent_Manager->isClick(event) == true) {
+			//Si le click est dans une case valide, place le signe dans la case cliquée 
 			if (this->placeSign(oEvent_Manager->get_pos(window), current_player->m_cSign)) {
 
 				//Actions à effectuer à chaque round du jeu 
-
-				this->print__tab();
-
 				round++;
 
+				//Si la win condition est valide pour le current player, on lui accorde un point et on break la while
 				if (this->isWin(current_player->m_cSign)) {
-					std::cout << current_player->m_cSign << " wins" << std::endl;
+					std::cout << current_player->m_name << " wins" << std::endl;
+					current_player->m_iPoints++;
+					this->Draw(window);
 					break;
 				}
 
+				//Si y'a égalité on break sans donner de point
 				if (round == 9) {
 					std::cout << " Tie " << std::endl;
+					this->Draw(window);
 					break;
 				}
 
+				//On switch de current player
 				if (current_player == oPlayer2) { current_player = oPlayer1; }
 				else if (current_player == oPlayer1) { current_player = oPlayer2; };
 			};
@@ -104,10 +121,20 @@ void Game_Manager::gameLoop(sf::RenderWindow* window) {
 		this->Draw(window);
 	}
 
+	std::cout << "Rejouer ? (oui/non) : ";
+	std::cin >> answer;
+
+	if (answer == "oui") {
+		this->gameLoop(window, oPlayer1, oPlayer2);
+	}
+
+	return;
+
 }
 
 bool Game_Manager::placeSign(sf::Vector2i coo, char sign) {
 	//Renvoie true si le signe s'est placé
+	//La fonction récupere la position du click souris et place le signe dans le tableau à la case correspondante
 	int x = floor(coo.x * 5 /1080);
 	int y = floor(coo.y * 9 / 1920) ;
 
@@ -118,15 +145,17 @@ bool Game_Manager::placeSign(sf::Vector2i coo, char sign) {
 	y--;
 	x -= 3;
 
+	//Check si la case cliquée est libre
 	if (m_grid[y][x]->m_value != 'o') { return false; };
 
+	//On met a jour les tableaux
 	m_grid[y][x]->m_value = sign;
-
 	m_grid[y][x]->SetForme(sign);
 	return true;
 }
 
 void Game_Manager::print__tab() {
+	//Print la grid en console
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			std::cout << m_grid[i][j]->m_value;
@@ -137,6 +166,7 @@ void Game_Manager::print__tab() {
 }
 
 bool Game_Manager::isWin(char current_sign) {
+	//return true si current_sign en parametre est placé 3fois d'affilée sur nimporte quelle ligne 
 	for (int i = 0; i < 3; i++) {
 		if (m_grid[i][0]->m_value == current_sign && m_grid[i][1]->m_value == current_sign && m_grid[i][2]->m_value == current_sign) {
 			return true;
